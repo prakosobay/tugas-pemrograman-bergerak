@@ -33,7 +33,6 @@ class _AddEditReviewScreenState extends State<AddEditReviewScreen> {
       _ratingController.text = widget.review!['rating'].toString();
       _commentController.text = widget.review!['comment'];
       _imageController.text = widget.review!['image'];
-      
     }
   }
 
@@ -58,7 +57,7 @@ class _AddEditReviewScreenState extends State<AddEditReviewScreen> {
       success = await _apiService.addReview(widget.username, title, rating, comment, image);
     } else {
       // Edit review
-      success = await _apiService.updateReview(widget.review!['_id'], title, rating, comment, image);
+      success = await _apiService.updateReview(widget.review!['_id'], widget.username, title, rating, comment, image);
     }
 
     if (success) {
@@ -75,14 +74,13 @@ class _AddEditReviewScreenState extends State<AddEditReviewScreen> {
     try {
       // Pilih gambar dari galeri
       final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-      // Atau pilih gambar dari kamera
-      // final pickedFile = await picker.pickImage(source: ImageSource.camera);
 
       if (pickedFile != null) {
         setState(() {
           _image = pickedFile;
         });
       } else {
+
         print('No image selected');
       }
     } catch (e) {
@@ -90,39 +88,30 @@ class _AddEditReviewScreenState extends State<AddEditReviewScreen> {
     }
   }
 
-  // Future<void> _convertImageToBase64() async {
-  //   if (_image == null) return;
+  Future<String?> _convertImageToBase64() async {
+    if (_image == null) return null;
 
-  //   try {
-  //     final imageBytes = await _image!.readAsBytes();
-  //     setState(() {
-  //       base64Image = base64Encode(imageBytes); // Mengonversi gambar menjadi base64
-  //     });
-  //     print("Base64 Image: $base64Image");
-  //   } catch (e) {
-  //     print("Error converting image to Base64: $e");
-  //   }
-  // }
-
-Future<String?> _convertImageToBase64() async {
-  if (_image == null) return null;
-
-  try {
-    final imageBytes = await _image!.readAsBytes();
-    final base64Image = base64Encode(imageBytes); // Mengonversi gambar menjadi base64
-    print("Base64 Image: $base64Image");
-    return base64Image.toString(); // Mengembalikan nilai base64Image
-  } catch (e) {
-    print("Error converting image to Base64: $e");
-    return null; // Mengembalikan null jika terjadi error
+    try {
+      final imageBytes = await _image!.readAsBytes();
+      final base64Image = base64Encode(imageBytes); // Mengonversi gambar menjadi base64
+      print("Base64 Image: $base64Image");
+      return base64Image.toString(); // Mengembalikan nilai base64Image
+    } catch (e) {
+      print("Error converting image to Base64: $e");
+      return null; // Mengembalikan null jika terjadi error
+    }
   }
-}
 
 
   @override
   Widget build(BuildContext context) {
     final isEditMode = widget.review != null;
-    Uint8List byteToImg = base64Decode(_imageController.text);
+
+    Uint8List byteToImg = _imageController.text.isNotEmpty
+    ? base64Decode(_imageController.text)
+    : Uint8List(0);
+
+    
 
     return Scaffold(
       appBar: AppBar(title: Text(isEditMode ? 'Edit Review' : 'Tambah Review')),
@@ -148,22 +137,40 @@ Future<String?> _convertImageToBase64() async {
             SizedBox(
               height: 20,
             ),
-            if (isEditMode) 
-              Image.memory(
-                byteToImg,
-                width: 200,
-                height: 200,
-                fit: BoxFit.cover,
-              ),
-            ElevatedButton(
-              onPressed: _pickImage,
-              child: Text('Select Image'),
-            ),
-            if (_image != null)
-              Image.file(
-                File(_image!.path),
-                height: 200,
-                width: 200,
+
+            if (isEditMode) // UPDATE
+              Column(
+                children: [
+                  if (_image != null)
+                    Column(
+                      children: [
+                        Image.file(
+                          File(_image!.path),
+                          height: 200,
+                          width: 200,
+                          fit: BoxFit.cover,
+                        ),
+                      ],
+                    )
+                  else 
+                    Image.memory(
+                      byteToImg,
+                      width: 200,
+                      height: 200,
+                      fit: BoxFit.cover,
+                    ),
+                ],
+              )
+            else // CREATE
+              if (_image != null)
+                Image.file(
+                  File(_image!.path),
+                  height: 200,
+                  width: 200,
+                ),
+              ElevatedButton(
+                onPressed: _pickImage,
+                child: Text('Select Image'),
               ),
             SizedBox(
               height: 20,

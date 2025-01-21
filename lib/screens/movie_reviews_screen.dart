@@ -14,6 +14,7 @@ class MovieReviewsScreen extends StatefulWidget {
 class _MovieReviewsScreenState extends State<MovieReviewsScreen> {
   final _apiService = ApiService();
   List<dynamic> _reviews = [];
+  bool _isLiked = false;
 
   @override
   void initState() {
@@ -25,7 +26,10 @@ class _MovieReviewsScreenState extends State<MovieReviewsScreen> {
     final reviews = await _apiService.getReviews(widget.username);
     setState(() {
       _reviews = reviews;
+      // _isLiked = false;
     });
+    print('REVIEW GLOBAL : $_reviews');
+    print('REVIEW LOCAL : $reviews');
   }
 
   void _deleteReview(String id) async {
@@ -37,6 +41,24 @@ class _MovieReviewsScreenState extends State<MovieReviewsScreen> {
         SnackBar(content: Text('Gagal menghapus review')),
       );
     }
+  }
+
+  void _likeReview(String id) async {
+    setState(() {
+      _isLiked = true;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Review Liked')),
+    );
+  }
+
+  void _dislike(String id) async {
+    setState(() {
+      _isLiked = false;
+    });
+        ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Review Disliked')),
+    );
   }
 
   @override
@@ -72,6 +94,18 @@ class _MovieReviewsScreenState extends State<MovieReviewsScreen> {
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      if (_isLiked) 
+                        Column(
+                          children: [
+                            IconButton(
+                            onPressed: () => _dislike(review['_id']), 
+                            icon: Icon(Icons.thumb_up, color: Colors.yellow,)),
+                          ],
+                        )
+                      else 
+                        IconButton(
+                          onPressed: () => _likeReview(review['_id']), 
+                          icon: Icon(Icons.thumb_up, color: Colors.black,)),
                       IconButton(
                         icon: Icon(Icons.edit),
                         onPressed: () async {
